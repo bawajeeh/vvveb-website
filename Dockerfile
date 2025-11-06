@@ -38,6 +38,9 @@ RUN apt-get update && apt-get install -y \
 # Enable required Apache modules for .htaccess features
 RUN a2enmod rewrite headers expires deflate
 
+# Copy PHP configuration
+COPY php.ini /usr/local/etc/php/conf.d/vvveb.ini
+
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

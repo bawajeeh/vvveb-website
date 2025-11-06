@@ -40,7 +40,7 @@ defined('VTPL_DEBUG') || define('VTPL_DEBUG', false);
 /*
 If enabled if a plugin generates an error it will be automatically disabled
 */
-defined('DISABLE_PLUGIN_ON_ERORR') || define('DISABLE_PLUGIN_ON_ERORR', false);
+defined('DISABLE_PLUGIN_ON_ERORR') || define('DISABLE_PLUGIN_ON_ERORR', true);
 
 //no trailing slash for subdir path
 //defined('V_SUBDIR_INSTALL') || define('V_SUBDIR_INSTALL', '/vvveb');
