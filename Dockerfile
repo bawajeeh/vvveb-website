@@ -60,9 +60,13 @@ RUN echo '<VirtualHost *:80>\n\
     CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
 </VirtualHost>' > /etc/apache2/sites-available/000-default.conf
 
-# Expose port 80
+# Copy startup script to handle Render's PORT variable
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Expose port (Render will set PORT env var dynamically)
 EXPOSE 80
 
-# Start Apache
-CMD ["apache2-foreground"]
+# Start Apache using our script that handles PORT
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
