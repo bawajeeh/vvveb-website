@@ -93,20 +93,53 @@ class Pgsql extends DBDriver {
 			$pass = trim((string)$pass);
 			$port = (int)$port;
 			
-			// PostgreSQL connection string format:
-			// "host=HOST port=PORT dbname=DBNAME user=USER password=PASS"
-			// Values with spaces or special chars should be quoted, but pg_connect handles this
-			// We'll build it simply - PostgreSQL's libpq handles escaping
-			$connect_string = "host=$host port=$port dbname=$dbname user=$user password=$pass";
-
-			// Clear any previous errors
-			error_clear_last();
+			// For Render.com PostgreSQL: if hostname doesn't contain a dot, try full domain
+			// Render internal hostnames like "dpg-xxxxx-a" need full domain like "dpg-xxxxx-a.oregon-postgres.render.com"
+			$hostnamesToTry = [$host];
+			if (strpos($host, '.') === false && preg_match('/^dpg-[a-z0-9]+-[a-z]$/i', $host)) {
+				// Try common Render PostgreSQL regions
+				$regions = [
+					'oregon-postgres.render.com',
+					'frankfurt-postgres.render.com',
+					'singapore-postgres.render.com',
+					'ohio-postgres.render.com',
+					'ireland-postgres.render.com',
+				];
+				foreach ($regions as $region) {
+					$hostnamesToTry[] = "$host.$region";
+				}
+			}
 			
-			// Attempt connection - use @ to suppress warnings, we'll handle errors ourselves
-			if (self :: $persistent) {
-				self :: $link = @pg_pconnect($connect_string);
-			} else {
-				self :: $link = @pg_connect($connect_string);
+			$lastError = null;
+			$connectionAttempted = false;
+			
+			// Try each hostname until one works
+			foreach ($hostnamesToTry as $tryHost) {
+				// PostgreSQL connection string format:
+				// "host=HOST port=PORT dbname=DBNAME user=USER password=PASS"
+				$connect_string = "host=$tryHost port=$port dbname=$dbname user=$user password=$pass";
+
+				// Clear any previous errors
+				error_clear_last();
+				
+				// Attempt connection - use @ to suppress warnings, we'll handle errors ourselves
+				if (self :: $persistent) {
+					self :: $link = @pg_pconnect($connect_string);
+				} else {
+					self :: $link = @pg_connect($connect_string);
+				}
+				
+				$connectionAttempted = true;
+
+				// If connection succeeded, break out of loop
+				if (self :: $link && self :: $link !== false) {
+					// Update host to the working one for future reference
+					$host = $tryHost;
+					break;
+				}
+				
+				// Save error for reporting
+				$lastError = error_get_last();
 			}
 
 			// Check connection result
@@ -125,12 +158,15 @@ class Pgsql extends DBDriver {
 					if (strpos($errorMsg, 'could not connect') !== false || 
 					    strpos($errorMsg, 'connection refused') !== false ||
 					    strpos($errorMsg, 'no route to host') !== false) {
-						$errorMessages[] = "\nTROUBLESHOOTING:";
-						$errorMessages[] = "- Verify hostname is correct: $host";
-						$errorMessages[] = "- Verify port is correct: $port";
-						$errorMessages[] = "- Check if database server is running";
-						$errorMessages[] = "- For Render: Ensure web service can access database (same region/network)";
-						$errorMessages[] = "- Check firewall/network settings";
+					$errorMessages[] = "\nTROUBLESHOOTING:";
+					$errorMessages[] = "- DNS Resolution Failed: Hostname '$host' could not be resolved";
+					$errorMessages[] = "- For Render PostgreSQL: Use full hostname like 'dpg-xxxxx-a.oregon-postgres.render.com'";
+					$errorMessages[] = "- Check Render database dashboard for correct Internal Database URL";
+					$errorMessages[] = "- Verify hostname is correct: $host";
+					$errorMessages[] = "- Verify port is correct: $port";
+					$errorMessages[] = "- Check if database server is running";
+					$errorMessages[] = "- For Render: Ensure web service and database are in same region";
+					$errorMessages[] = "- Check firewall/network settings";
 					} elseif (strpos($errorMsg, 'authentication') !== false || 
 					          strpos($errorMsg, 'password') !== false ||
 					          strpos($errorMsg, 'ident') !== false) {
