@@ -18,4 +18,5 @@ Dockerfile
 docker-compose.yaml
 render.yaml
 *.sh
+!docker-entrypoint.sh
 
