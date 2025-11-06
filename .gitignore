@@ -1,0 +1,55 @@
+# Dependencies
+/vendor/
+node_modules/
+
+# Storage and cache
+/storage/cache/*
+/storage/logs/*
+/storage/compiled-templates/*
+/storage/backup/*
+/storage/model/*
+!/storage/cache/.gitkeep
+!/storage/logs/.gitkeep
+!/storage/compiled-templates/.gitkeep
+!/storage/backup/.gitkeep
+!/storage/model/.gitkeep
+
+# Public cache
+/public/page-cache/*
+/public/assets-cache/*
+/public/image-cache/*
+!/public/page-cache/.gitkeep
+!/public/assets-cache/.gitkeep
+!/public/image-cache/.gitkeep
+
+# Database config (contains sensitive info)
+/config/db.php
+
+# Environment files (keep templates)
+env.php
+!env.production.php
+!env.render.php
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build files
+latest.zip
+*.zip
+
+# Temporary files
+*.log
+*.tmp
+
+# SQLite database (if using)
+/storage/sqlite/*.db
+!/storage/sqlite/.gitkeep
+

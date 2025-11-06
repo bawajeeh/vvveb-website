@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: vvveb-website
+    env: php
+    buildCommand: composer install --no-dev --optimize-autoloader
+    startCommand: php -S 0.0.0.0:$PORT -t public
+    envVars:
+      - key: PHP_VERSION
+        value: 8.1
+    disk:
+      name: vvveb-storage
+      mountPath: /opt/render/project/src/storage
+      sizeGB: 1
+
+databases:
+  - name: vvveb-db
+    databaseName: vvveb
+    user: vvveb_user
+    plan: free
+
