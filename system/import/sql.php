@@ -30,7 +30,7 @@ class Sql {
 
 	private $prefix;
 
-	function __construct($driver = DB_ENGINE, $host = DB_HOST, $dbname = DB_NAME, $user = DB_USER, $pass = DB_PASS, $port = DB_PASS, $prefix = DB_PREFIX) {
+	function __construct($driver = DB_ENGINE, $host = DB_HOST, $dbname = DB_NAME, $user = DB_USER, $pass = DB_PASS, $port = DB_PORT, $prefix = DB_PREFIX) {
 		$this->sqlPath = DIR_ROOT . "install/sql/$driver/";
 		$engine        = '\Vvveb\System\Db\\' . ucfirst($driver);
 

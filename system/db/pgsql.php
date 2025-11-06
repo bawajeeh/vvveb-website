@@ -242,7 +242,27 @@ class Pgsql extends DBDriver {
 	}
 
 	public function multi_query($sql) {
-		return $this->query($sql);
+		// PostgreSQL can't execute multiple statements in one query
+		// Split by semicolon and execute each statement separately
+		$statements = preg_split('/;\s*[\n\r]/', $sql);
+		
+		foreach ($statements as $statement) {
+			$statement = trim($statement);
+			
+			// Skip empty statements and comments
+			if (empty($statement) || strncmp($statement, '--', 2) === 0) {
+				continue;
+			}
+			
+			// Execute each statement
+			$result = $this->query($statement);
+			
+			if ($result === false) {
+				return false;
+			}
+		}
+		
+		return true;
 	}
 
 	public function close() {
