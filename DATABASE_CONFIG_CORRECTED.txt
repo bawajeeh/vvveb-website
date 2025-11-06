@@ -1,0 +1,90 @@
+# ✅ CORRECTED Database Connection Details from Render!
+
+## ⚠️ IMPORTANT: Hostname and Password Corrections
+
+**Previous (WRONG):**
+- Host: `dpg-d46e12a4d50c73b0j330-a` ❌
+- Password: `1dkwBSv5EdEf5IBXnR2Jg1IL8ENLH9pz` ❌
+
+**Correct (FROM RENDER):**
+- Host: `dpg-d46el2a4d50c73b0j330-a` ✅ (note: "l2a" not "12a")
+- Password: `ldkwBSv5EdEf5IBXnR2JglIL8ENLH9pz` ✅ (note: "lIL" not "1IL")
+
+---
+
+## Environment Variables for Web Service:
+
+Add these to your Render Web Service Environment Variables:
+
+1. **Key:** `PHP_VERSION`
+   **Value:** `8.1`
+
+2. **Key:** `DB_ENGINE`
+   **Value:** `pgsql`
+
+3. **Key:** `DB_HOST`
+   **Value:** `dpg-d46el2a4d50c73b0j330-a.oregon-postgres.render.com`
+   **OR (for internal):** `dpg-d46el2a4d50c73b0j330-a`
+
+4. **Key:** `DB_PORT`
+   **Value:** `5432`
+
+5. **Key:** `DB_DATABASE`
+   **Value:** `vvveb_db`
+
+6. **Key:** `DB_USER`
+   **Value:** `vvveb_db_user`
+
+7. **Key:** `DB_PASSWORD`
+   **Value:** `ldkwBSv5EdEf5IBXnR2JglIL8ENLH9pz`
+
+---
+
+## Connection Strings from Render:
+
+### Internal (for services within Render):
+```
+postgresql://vvveb_db_user:ldkwBSv5EdEf5IBXnR2JglIL8ENLH9pz@dpg-d46el2a4d50c73b0j330-a/vvveb_db
+```
+
+### External (for services outside Render):
+```
+postgresql://vvveb_db_user:ldkwBSv5EdEf5IBXnR2JglIL8ENLH9pz@dpg-d46el2a4d50c73b0j330-a.oregon-postgres.render.com/vvveb_db
+```
+
+---
+
+## For Installation (Web Interface):
+
+When you visit `/install/` after deployment, use:
+
+- **Database Engine:** PostgreSQL
+- **Host:** `dpg-d46el2a4d50c73b0j330-a.oregon-postgres.render.com` (use external for web service)
+- **Port:** `5432`
+- **Database:** `vvveb_db`
+- **Username:** `vvveb_db_user`
+- **Password:** `ldkwBSv5EdEf5IBXnR2JglIL8ENLH9pz`
+- **Prefix:** (leave empty)
+
+---
+
+## ✅ Next Steps:
+
+1. **Go to Render Dashboard** → Your Web Service → Environment
+2. **Update these environment variables:**
+   - `DB_HOST` = `dpg-d46el2a4d50c73b0j330-a.oregon-postgres.render.com`
+   - `DB_PASSWORD` = `ldkwBSv5EdEf5IBXnR2JglIL8ENLH9pz`
+3. **Save** and wait for rebuild (2-3 minutes)
+4. **Visit** `https://ain90.online/install`
+5. **Use the corrected credentials above**
+
+---
+
+## 🔍 Key Differences:
+
+1. **Hostname:** `dpg-d46el2a4d50c73b0j330-a` (has "l2a" not "12a")
+2. **Full hostname:** `dpg-d46el2a4d50c73b0j330-a.oregon-postgres.render.com`
+3. **Password:** `ldkwBSv5EdEf5IBXnR2JglIL8ENLH9pz` (has "lIL" not "1IL")
+
+**These corrections will fix the connection!** ✅
+
