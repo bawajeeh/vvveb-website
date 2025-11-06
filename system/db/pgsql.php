@@ -81,17 +81,21 @@ class Pgsql extends DBDriver {
 		if (! self :: $link) {
 			//port 5432 for direct pgsql connection 6432 for pgbouncer
 			$port           = $port ?: 5432;
-			$connect_string = "host=$host port=$port dbname=$dbname  user=$user password=$pass";
+			$connect_string = "host=$host port=$port dbname=$dbname user=$user password=$pass";
 
 			if (self :: $persistent) {
-				self :: $link = pg_pconnect($connect_string);
+				self :: $link = @pg_pconnect($connect_string);
 			} else {
-				self :: $link = pg_connect($connect_string);
+				self :: $link = @pg_connect($connect_string);
+			}
+
+			if (! self :: $link) {
+				$error = pg_last_error() ?: 'Unknown PostgreSQL connection error';
+				throw new \Exception("Failed to connect to PostgreSQL database: $error\nHost: $host\nDatabase: $dbname\nUser: $user");
 			}
 
 			if (self :: $link) {
 				//				pg_set_error_verbosity(self :: $link, PGSQL_ERRORS_VERBOSE);
-			} else {
 			}
 		}
 
