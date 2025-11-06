@@ -3,7 +3,6 @@
 node_modules
 vendor
 .env
-env.php
 storage/cache/*
 storage/logs/*
 storage/compiled-templates/*
