@@ -84,67 +84,106 @@ class Pgsql extends DBDriver {
 	public function connect($host = DB_HOST, $dbname = DB_NAME, $user = DB_USER, $pass = DB_PASS, $port = DB_PORT, $prefix = DB_PREFIX) {
 		if (! self :: $link) {
 			//port 5432 for direct pgsql connection 6432 for pgbouncer
-			$port           = $port ?: 5432;
+			$port = $port ?: 5432;
 			
-			// Build connection string with proper escaping
-			$connect_string = sprintf(
-				"host=%s port=%d dbname=%s user=%s password=%s",
-				addslashes($host),
-				(int)$port,
-				addslashes($dbname),
-				addslashes($user),
-				addslashes($pass)
-			);
+			// Clean inputs - trim whitespace
+			$host = trim((string)$host);
+			$dbname = trim((string)$dbname);
+			$user = trim((string)$user);
+			$pass = trim((string)$pass);
+			$port = (int)$port;
+			
+			// PostgreSQL connection string format:
+			// "host=HOST port=PORT dbname=DBNAME user=USER password=PASS"
+			// Values with spaces or special chars should be quoted, but pg_connect handles this
+			// We'll build it simply - PostgreSQL's libpq handles escaping
+			$connect_string = "host=$host port=$port dbname=$dbname user=$user password=$pass";
 
-			// Attempt connection
+			// Clear any previous errors
+			error_clear_last();
+			
+			// Attempt connection - use @ to suppress warnings, we'll handle errors ourselves
 			if (self :: $persistent) {
-				self :: $link = @pg_pconnect($connect_string, PGSQL_CONNECT_FORCE_NEW);
+				self :: $link = @pg_pconnect($connect_string);
 			} else {
-				self :: $link = @pg_connect($connect_string, PGSQL_CONNECT_FORCE_NEW);
+				self :: $link = @pg_connect($connect_string);
 			}
 
 			// Check connection result
-			if (! self :: $link) {
-				// Get error - in PHP 8.1+, pg_last_error() requires connection parameter
-				// Since connection failed, we need alternative error detection
-				$error = 'Unknown PostgreSQL connection error';
+			if (! self :: $link || self :: $link === false) {
+				// Connection failed - get detailed error information
+				$errorMessages = [];
+				$errorMessages[] = "PostgreSQL connection failed";
 				
-				// Try to get last PHP error
+				// Get PHP error if available
 				$lastError = error_get_last();
-				if ($lastError && strpos($lastError['message'], 'pg_') !== false) {
-					$error = $lastError['message'];
+				if ($lastError) {
+					$errorMessages[] = "PHP Error: " . $lastError['message'];
+					$errorMsg = strtolower($lastError['message']);
+					
+					// Provide specific guidance based on error type
+					if (strpos($errorMsg, 'could not connect') !== false || 
+					    strpos($errorMsg, 'connection refused') !== false ||
+					    strpos($errorMsg, 'no route to host') !== false) {
+						$errorMessages[] = "\nTROUBLESHOOTING:";
+						$errorMessages[] = "- Verify hostname is correct: $host";
+						$errorMessages[] = "- Verify port is correct: $port";
+						$errorMessages[] = "- Check if database server is running";
+						$errorMessages[] = "- For Render: Ensure web service can access database (same region/network)";
+						$errorMessages[] = "- Check firewall/network settings";
+					} elseif (strpos($errorMsg, 'authentication') !== false || 
+					          strpos($errorMsg, 'password') !== false ||
+					          strpos($errorMsg, 'ident') !== false) {
+						$errorMessages[] = "\nTROUBLESHOOTING:";
+						$errorMessages[] = "- Verify username is correct: $user";
+						$errorMessages[] = "- Verify password is correct (check for typos)";
+						$errorMessages[] = "- Check user permissions in PostgreSQL";
+					} elseif (strpos($errorMsg, 'database') !== false && 
+					          (strpos($errorMsg, 'does not exist') !== false || 
+					           strpos($errorMsg, 'not found') !== false)) {
+						$errorMessages[] = "\nTROUBLESHOOTING:";
+						$errorMessages[] = "- Verify database name is correct: $dbname";
+						$errorMessages[] = "- Database may not exist - create it first";
+					}
+				} else {
+					$errorMessages[] = "No detailed error available - connection was refused";
+					$errorMessages[] = "\nTROUBLESHOOTING:";
+					$errorMessages[] = "- Check all connection parameters";
+					$errorMessages[] = "- Verify database server is accessible";
+					$errorMessages[] = "- Check network connectivity";
 				}
 				
-				// Common connection error messages
-				if (strpos($error, 'timeout') !== false || strpos($error, 'Connection refused') !== false) {
-					$error = "Connection refused or timeout. Check host, port, and network connectivity.";
-				} elseif (strpos($error, 'authentication') !== false || strpos($error, 'password') !== false) {
-					$error = "Authentication failed. Check username and password.";
-				} elseif (strpos($error, 'database') !== false) {
-					$error = "Database does not exist or access denied.";
-				}
+				$errorMessages[] = "\nCONNECTION DETAILS:";
+				$errorMessages[] = "Host: $host";
+				$errorMessages[] = "Port: $port";
+				$errorMessages[] = "Database: $dbname";
+				$errorMessages[] = "User: $user";
+				$errorMessages[] = "\nConnection string used: host=$host port=$port dbname=$dbname user=$user";
 				
-				throw new \Exception(
-					"Failed to connect to PostgreSQL database.\n" .
-					"Error: $error\n" .
-					"Host: $host\n" .
-					"Port: $port\n" .
-					"Database: $dbname\n" .
-					"User: $user\n" .
-					"Connection string: host=$host port=$port dbname=$dbname user=$user"
-				);
+				throw new \Exception(implode("\n", $errorMessages));
 			}
 
-			// Connection successful
+			// Connection successful - verify it works with a test query
 			if (self :: $link) {
-				// Set client encoding to UTF-8
+				// Test the connection
+				$testResult = @pg_query(self :: $link, "SELECT version()");
+				if (!$testResult) {
+					// Connection exists but query failed
+					$connError = pg_last_error(self :: $link);
+					@pg_close(self :: $link);
+					self :: $link = null;
+					throw new \Exception(
+						"Connection established but test query failed.\n" .
+						"PostgreSQL Error: " . ($connError ?: 'Unknown error') . "\n" .
+						"This may indicate database permission issues."
+					);
+				}
+				@pg_free_result($testResult);
+				
+				// Set client encoding to UTF-8 for proper character handling
 				@pg_set_client_encoding(self :: $link, 'UTF8');
-				//				pg_set_error_verbosity(self :: $link, PGSQL_ERRORS_VERBOSE);
 			}
 		}
-
-		//sync database time
-		//self :: $link->execute('SET `time_zone` = :zone', ['zone' => $this->escape(date('P'))]);
 
 		return self :: $link;
 	}
