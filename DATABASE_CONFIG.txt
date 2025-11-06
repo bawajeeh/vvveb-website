@@ -1,0 +1,60 @@
+# ✅ Database Connection Details Extracted!
+
+## Environment Variables for Web Service:
+
+Add these to your Render Web Service Environment Variables:
+
+1. **Key:** `PHP_VERSION`
+   **Value:** `8.1`
+
+2. **Key:** `DB_ENGINE`
+   **Value:** `pgsql`
+
+3. **Key:** `DB_HOST`
+   **Value:** `dpg-d46e12a4d50c73b0j330-a`
+
+4. **Key:** `DB_PORT`
+   **Value:** `5432`
+
+5. **Key:** `DB_DATABASE`
+   **Value:** `vvveb_db`
+
+6. **Key:** `DB_USER`
+   **Value:** `vvveb_db_user`
+
+7. **Key:** `DB_PASSWORD`
+   **Value:** `1dkwBSv5EdEf5IBXnR2Jg1IL8ENLH9pz`
+
+---
+
+## For Installation (Web Interface):
+
+When you visit `/install/` after deployment, use:
+
+- **Database Engine:** PostgreSQL
+- **Host:** `dpg-d46e12a4d50c73b0j330-a`
+- **Port:** `5432`
+- **Database:** `vvveb_db`
+- **Username:** `vvveb_db_user`
+- **Password:** `1dkwBSv5EdEf5IBXnR2Jg1IL8ENLH9pz`
+- **Prefix:** (leave empty)
+
+---
+
+## ✅ Next Steps:
+
+1. Go back to your Web Service configuration
+2. Add all 7 environment variables above
+3. Add Persistent Disk:
+   - Name: `vvveb-storage`
+   - Mount Path: `/var/www/html/storage`
+   - Size: `1 GB`
+4. Click "Create Web Service"
+5. Wait for deployment (5-10 minutes)
+6. Visit `https://YOUR-URL.onrender.com/install/`
+7. Use the installation credentials above
+
+---
+
+**All set! Add these environment variables to your Web Service! 🚀**
+

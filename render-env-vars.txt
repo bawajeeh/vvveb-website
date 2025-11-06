@@ -1,0 +1,12 @@
+# Environment Variables for Render Web Service
+
+Copy these EXACT values into your Web Service Environment Variables:
+
+PHP_VERSION=8.1
+DB_ENGINE=pgsql
+DB_HOST=dpg-d46e12a4d50c73b0j330-a
+DB_PORT=5432
+DB_DATABASE=vvveb_db
+DB_USER=vvveb_db_user
+DB_PASSWORD=1dkwBSv5EdEf5IBXnR2Jg1IL8ENLH9pz
+
