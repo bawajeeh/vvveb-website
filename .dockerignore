@@ -12,11 +12,24 @@ storage/model/*
 public/page-cache/*
 public/assets-cache/*
 public/image-cache/*
+# Keep essential documentation in container
+!README.md
+!SECURITY_AUDIT_REPORT.md
+!END_TO_END_REVIEW.md
+!TESTING_CHECKLIST.md
+!COMPLETE_FIXES_SUMMARY.md
+# Exclude other markdown files
 *.md
+!README.md
+!SECURITY_AUDIT_REPORT.md
+!END_TO_END_REVIEW.md
+!TESTING_CHECKLIST.md
+!COMPLETE_FIXES_SUMMARY.md
 Dockerfile
 .dockerignore
 docker-compose.yaml
 render.yaml
 *.sh
 !docker-entrypoint.sh
+docs/
 
