@@ -61,12 +61,16 @@ class Pgsql extends DBDriver {
 		if (self :: $link) {
 			return pg_last_error(self :: $link) ?? '';
 		}
+		return 'No PostgreSQL connection available';
 	}
 
 	public function errorCode() {
 		if (self :: $link) {
-			return pg_last_error(self :: $link) ?? 0;
+			// PostgreSQL doesn't have error codes like MySQL
+			// Return 0 if connection exists, non-zero if error
+			return pg_last_error(self :: $link) ? 1 : 0;
 		}
+		return 0;
 	}
 
 	public function get_result($stmt) {
@@ -81,20 +85,60 @@ class Pgsql extends DBDriver {
 		if (! self :: $link) {
 			//port 5432 for direct pgsql connection 6432 for pgbouncer
 			$port           = $port ?: 5432;
-			$connect_string = "host=$host port=$port dbname=$dbname user=$user password=$pass";
+			
+			// Build connection string with proper escaping
+			$connect_string = sprintf(
+				"host=%s port=%d dbname=%s user=%s password=%s",
+				addslashes($host),
+				(int)$port,
+				addslashes($dbname),
+				addslashes($user),
+				addslashes($pass)
+			);
 
+			// Attempt connection
 			if (self :: $persistent) {
-				self :: $link = @pg_pconnect($connect_string);
+				self :: $link = @pg_pconnect($connect_string, PGSQL_CONNECT_FORCE_NEW);
 			} else {
-				self :: $link = @pg_connect($connect_string);
+				self :: $link = @pg_connect($connect_string, PGSQL_CONNECT_FORCE_NEW);
 			}
 
+			// Check connection result
 			if (! self :: $link) {
-				$error = pg_last_error() ?: 'Unknown PostgreSQL connection error';
-				throw new \Exception("Failed to connect to PostgreSQL database: $error\nHost: $host\nDatabase: $dbname\nUser: $user");
+				// Get error - in PHP 8.1+, pg_last_error() requires connection parameter
+				// Since connection failed, we need alternative error detection
+				$error = 'Unknown PostgreSQL connection error';
+				
+				// Try to get last PHP error
+				$lastError = error_get_last();
+				if ($lastError && strpos($lastError['message'], 'pg_') !== false) {
+					$error = $lastError['message'];
+				}
+				
+				// Common connection error messages
+				if (strpos($error, 'timeout') !== false || strpos($error, 'Connection refused') !== false) {
+					$error = "Connection refused or timeout. Check host, port, and network connectivity.";
+				} elseif (strpos($error, 'authentication') !== false || strpos($error, 'password') !== false) {
+					$error = "Authentication failed. Check username and password.";
+				} elseif (strpos($error, 'database') !== false) {
+					$error = "Database does not exist or access denied.";
+				}
+				
+				throw new \Exception(
+					"Failed to connect to PostgreSQL database.\n" .
+					"Error: $error\n" .
+					"Host: $host\n" .
+					"Port: $port\n" .
+					"Database: $dbname\n" .
+					"User: $user\n" .
+					"Connection string: host=$host port=$port dbname=$dbname user=$user"
+				);
 			}
 
+			// Connection successful
 			if (self :: $link) {
+				// Set client encoding to UTF-8
+				@pg_set_client_encoding(self :: $link, 'UTF8');
 				//				pg_set_error_verbosity(self :: $link, PGSQL_ERRORS_VERBOSE);
 			}
 		}
