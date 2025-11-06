@@ -200,10 +200,11 @@ class Pgsql extends DBDriver {
 
 	public function query($sql, $parameters = []) {
 		if (! self :: $link) {
-			return false;
+			$this->connect();
 		}
 
 		$result = false;
+		$origSql = $sql; // Store original SQL for error messages
 
 		try {
 			if ($parameters) {
@@ -222,7 +223,7 @@ class Pgsql extends DBDriver {
 
 			if ($this->last_res == false) {
 				$errorMessage = pg_last_error(self :: $link);
-				$message      = $errorMessage . "\n" . $this->debugSql($origSql, $params) . "\n - " . $origSql . "\n - " . print_r(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1), true);
+				$message      = $errorMessage . "\n" . $this->debugSql($origSql, $parameters) . "\n - " . $origSql;
 
 				throw new \Exception($message);
 			}
@@ -233,7 +234,7 @@ class Pgsql extends DBDriver {
 
 			return $this->last_res;
 		} catch (\Exception $e) {
-			$message = $e->getMessage() . "\n" . $this->debugSql($origSql, $params) . "\n - " . $origSql . "\n - " . print_r(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1), true);
+			$message = $e->getMessage() . "\n - " . substr($origSql, 0, 500);
 
 			throw new \Exception($message, $e->getCode());
 		}
@@ -242,23 +243,44 @@ class Pgsql extends DBDriver {
 	}
 
 	public function multi_query($sql) {
+		// Ensure connection is established
+		if (! self :: $link) {
+			$this->connect();
+		}
+		
 		// PostgreSQL can't execute multiple statements in one query
 		// Split by semicolon and execute each statement separately
-		$statements = preg_split('/;\s*[\n\r]/', $sql);
+		// Remove single-line comments first (but preserve SQL in strings)
+		$sql = preg_replace('/--.*$/m', '', $sql);
+		
+		// Split by semicolon followed by optional whitespace and newline/end
+		// This handles both single-line and multi-line statements
+		$statements = preg_split('/;\s*(?=\n|$)/m', $sql);
 		
 		foreach ($statements as $statement) {
 			$statement = trim($statement);
 			
-			// Skip empty statements and comments
-			if (empty($statement) || strncmp($statement, '--', 2) === 0) {
+			// Skip empty statements
+			if (empty($statement)) {
 				continue;
 			}
 			
-			// Execute each statement
-			$result = $this->query($statement);
+			// Ensure statement ends with semicolon for pg_query
+			if (substr($statement, -1) !== ';') {
+				$statement .= ';';
+			}
 			
-			if ($result === false) {
-				return false;
+			// Execute each statement
+			try {
+				$result = $this->query($statement);
+				
+				if ($result === false) {
+					$error = $this->error();
+					throw new \Exception("SQL execution failed: " . $error . "\nStatement: " . substr($statement, 0, 200));
+				}
+			} catch (\Exception $e) {
+				// Re-throw with context
+				throw new \Exception($e->getMessage() . "\n\nFailed statement:\n" . substr($statement, 0, 500), $e->getCode());
 			}
 		}
 		
