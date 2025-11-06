@@ -14,7 +14,7 @@ CREATE TABLE field (
   "validation" text NOT NULL,
   "presentation" text NOT NULL,
   "conditionals" text NOT NULL,
-  "row" int NOT NULL DEFAULT 0
+  "row" int NOT NULL DEFAULT 0,
   "status" smallint NOT NULL,
   "sort_order" int NOT NULL DEFAULT 0,
   PRIMARY KEY ("field_id")
