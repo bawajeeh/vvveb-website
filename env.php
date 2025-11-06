@@ -23,7 +23,7 @@
 /*
 Check .sql files for changes and recompile, use on dev only
 */
-define('SQL_CHECK', true);
+define('SQL_CHECK', false);
 
 /*
  Page cache needs web server support for maximum performance, make sure that apache has .htaccess support and nginx is configured according to included nginx.conf
@@ -34,7 +34,7 @@ define('PAGE_CACHE', true);
 Disable on production to hide error messages, if enabled it will show detailed error messages 
 Warning: Enabling debug will decrease performance
 */
-defined('DEBUG') || define('DEBUG', true);
+defined('DEBUG') || define('DEBUG', false);
 defined('VTPL_DEBUG') || define('VTPL_DEBUG', false);
 
 /*
